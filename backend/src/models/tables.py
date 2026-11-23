@@ -1,5 +1,5 @@
-from sqlalchemy import (JSON, Column, ForeignKey, Integer, MetaData, String,
-                        Table, Text)
+from sqlalchemy import (JSON, Column, ForeignKey, Index, Integer, MetaData,
+                        String, Table, Text, UniqueConstraint)
 
 schema = MetaData()
 users = Table('accounts', schema,
@@ -32,6 +32,23 @@ evidence = Table('business_evidence', schema,
     Column('reviewer', String(40)),
     Column('review_note', String(500)),
     Column('reviewed_at', String(32)))
+# 外包修复站交接单：一份已签字验收报告对应一张交接单，按底片维护签字顺序。
+handoffs = Table('repair_handoffs', schema,
+    Column('id', Integer, primary_key=True),
+    Column('handoff_no', String(40), nullable=False, unique=True),
+    Column('evidence_id', ForeignKey('business_evidence.id'), nullable=False, unique=True),
+    Column('asset', String(120), nullable=False),
+    Column('seq', Integer, nullable=False),
+    Column('state', String(20), nullable=False, index=True),
+    Column('dispatch_no', String(40)),
+    Column('dispatched_at', String(32)),
+    Column('receipt_expires_at', String(32)),
+    Column('delivered_at', String(32)),
+    Column('receipt_no', String(64)),
+    Column('attempts', Integer, nullable=False, server_default='0'),
+    Column('created_at', String(32), nullable=False),
+    UniqueConstraint('asset', 'seq', name='uq_repair_handoffs_asset_seq'))
+Index('ix_repair_handoffs_pick', 'state', 'asset', 'seq')
 audit = Table('audit_events', schema,
     Column('id', Integer, primary_key=True),
     Column('actor', String(40), nullable=False),

@@ -6,26 +6,16 @@ from sqlalchemy import and_, or_, select
 
 from src.config.settings import cache, engine
 from src.constants.workflow import Status
-from src.models.tables import audit, cases, evidence, runs
-from src.services import domain
+from src.models.tables import cases, evidence, runs
+from src.services import domain, handoff
+from src.services.db import found, log
 from src.utils.encoding import canonical
 from src.utils.time import utc_time
-
-
-def log(conn, actor, action, reference):
-    conn.execute(audit.insert().values(actor=actor, action=action, reference=str(reference), created_at=utc_time()))
 
 
 def recent(table):
     with engine.connect() as conn:
         return [dict(row) for row in conn.execute(select(table).order_by(table.c.id.desc()).limit(100)).mappings()]
-
-
-def found(conn, table, identity):
-    row = conn.execute(select(table).where(table.c.id == identity)).mappings().first()
-    if row is None:
-        raise HTTPException(404, '找不到该记录')
-    return dict(row)
 
 
 def make_case(title, payload, actor):
@@ -100,5 +90,7 @@ def review(identity, note, actor):
                             .values(review_note=note, reviewer=actor, reviewed_at=utc_time())).rowcount
         if count != 1:
             raise HTTPException(409, '该证据已经复核')
+        # 签字即入交接池：修复站停机期间报告照常签字并在此累积。
+        handoff.provision(conn)
         log(conn, actor, 'review', identity)
         return found(conn, evidence, identity)

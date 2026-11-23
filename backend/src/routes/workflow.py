@@ -4,8 +4,9 @@ from sqlalchemy import text
 from src.config.settings import cache, engine
 from src.controllers.workflow import download
 from src.models.tables import audit, cases, evidence, runs
-from src.schemas.workflow import CaseForm, LoginForm, ReviewForm
-from src.services import domain, workflow
+from src.schemas.workflow import (CaseForm, LoginForm, PollForm, ReceiptForm,
+                                  ReviewForm)
+from src.services import domain, handoff, workflow
 from src.services.security import current_user, login, operator, reviewer
 
 router = APIRouter()
@@ -62,6 +63,25 @@ def export_evidence(identity: int, _=Depends(current_user)):
 @router.post('/evidence/{identity}/review')
 def review_evidence(identity: int, form: ReviewForm, actor=Depends(reviewer)):
     return workflow.review(identity, form.note, actor)
+
+
+@router.get('/handoffs')
+def list_handoffs(_=Depends(current_user)):
+    return handoff.list_handoffs()
+
+
+@router.post('/repair/poll')
+def repair_poll(form: PollForm, _=Depends(current_user)):
+    """外包修复站定时领取已签字验收报告。"""
+    items = handoff.poll(form.limit)
+    return {'count': len(items), 'items': items}
+
+
+@router.post('/repair/receipt')
+def repair_receipt(form: ReceiptForm, _=Depends(current_user)):
+    """修复站回传签收回执；过期回执作废，重复回执不重复签收。"""
+    item, replayed = handoff.acknowledge(form.dispatch_no, form.receipt_no)
+    return {'replayed': replayed, 'item': item}
 
 
 @router.get('/audit')

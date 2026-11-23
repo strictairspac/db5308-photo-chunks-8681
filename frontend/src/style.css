@@ -69,7 +69,12 @@ td { border-top:1px solid var(--line); min-width: 3.3rem; max-width: 35ch; }
 .metrics dt { font-weight: 600; font-size: .89em; }
 .status { display:inline-block; border:1px solid var(--line); padding:.05em .55em; border-radius:var(--radius); white-space:nowrap; font-size:.88em; }
 .status[data-state='complete'] { color: oklch(.35 .09 150); border-color: oklch(.78 .11 151); }
-.status[data-state='failed'],.error { color: oklch(.36 .15 27); background: oklch(.94 .045 26); }
+.status[data-state='delivered'] { color: oklch(.35 .09 150); border-color: oklch(.78 .11 151); }
+.status[data-state='dispatched'] { color: oklch(.38 .10 70); border-color: oklch(.80 .12 75); }
+.status[data-state='expired'],.status[data-state='failed'],.error { color: oklch(.36 .15 27); background: oklch(.94 .045 26); }
+.inline-form { display:flex; flex-wrap:wrap; gap:.8rem; align-items:end; }
+.inline-form label { flex:1 1 12rem; }
+.inline-form button { flex:0 0 auto; }
 .error { padding:.7rem .9rem; margin-bottom:1rem; border-inline-start:3px solid currentColor; }
 .empty { margin:0; padding:1.3rem; color:var(--muted); background:var(--soft); }
 summary { cursor:pointer; font-weight:600; color:var(--accent-dark); }
